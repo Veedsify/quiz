@@ -485,8 +485,6 @@ export default function HomePage() {
     previousQuestion,
     isCompleted,
     resetQuiz,
-    totalScore,
-    sectionScores,
   } = useQuizStore();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
