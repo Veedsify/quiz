@@ -551,9 +551,9 @@ export async function createDummyRecord() {
     };
 
     // Calculate section scores based on random responses
-    const calculateSectionScore = (sectionResponses: any) => {
+    const calculateSectionScore = (sectionResponses: { [key: number]: { selectedOption: string; points: number } }) => {
       return Object.values(sectionResponses).reduce(
-        (sum: number, response: any) => sum + response.points,
+        (sum: number, response: { selectedOption: string; points: number }) => sum + response.points,
         0,
       );
     };
