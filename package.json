@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@fontsource-variable/geist": "^5.2.6",
     "@libsql/client": "^0.15.10",
     "@types/sqlite3": "^3.1.11",
     "dotenv": "^17.2.1",
