@@ -27,7 +27,8 @@ export default function DoctorChecklistPage() {
     if (!selectedOption || !selectedOption.trim()) return 0;
 
     switch (criteria.inputType) {
-      case "binary": { // Award full points for positive binary labels; zero for negatives
+      case "binary": {
+        // Award full points for positive binary labels; zero for negatives
         const positive = [
           "yes",
           "provided",
@@ -133,18 +134,18 @@ export default function DoctorChecklistPage() {
     }));
   };
 
-  const clearResponse = (sectionIndex: number, criteriaIndex: number) => {
-    setResponses((prev) => {
-      const next = { ...prev };
-      if (next[sectionIndex]) {
-        delete next[sectionIndex][criteriaIndex];
-        if (Object.keys(next[sectionIndex]).length === 0) {
-          delete next[sectionIndex];
-        }
-      }
-      return next;
-    });
-  };
+  // const clearResponse = (sectionIndex: number, criteriaIndex: number) => {
+  //   setResponses((prev) => {
+  //     const next = { ...prev };
+  //     if (next[sectionIndex]) {
+  //       delete next[sectionIndex][criteriaIndex];
+  //       if (Object.keys(next[sectionIndex]).length === 0) {
+  //         delete next[sectionIndex];
+  //       }
+  //     }
+  //     return next;
+  //   });
+  // };
 
   const calculateScores = () => {
     let totalScore = 0;
