@@ -498,7 +498,7 @@ export default function DoctorChecklistPage() {
                     htmlFor="email"
                     className="block text-sm font-semibold text-gray-700 mb-3"
                   >
-                    Email Address (Optional)
+                    Assessor’s email (Optional)
                   </label>
                   <input
                     type="email"
