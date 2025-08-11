@@ -482,7 +482,7 @@ export default function DoctorChecklistPage() {
                     htmlFor="name"
                     className="block text-sm font-semibold text-gray-700 mb-3"
                   >
-                    Candidates’s Name *
+                    Candidate’s Name *
                   </label>
                   <input
                     type="text"
