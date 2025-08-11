@@ -3,10 +3,11 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 // Supports weights 100-900
-import '@fontsource-variable/geist';
+import "@fontsource-variable/geist";
 export const metadata: Metadata = {
-  title: "Travel Health Assessment Quiz",
-  description: "Interactive quiz for travel health assessment evaluation",
+  title: "Doctor Assessment Checklist",
+  description:
+    "Checklist for evaluating doctor performance during travel health consultations",
 };
 
 export default function RootLayout({
@@ -16,11 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`antialiased bg-gray-50 min-h-screen`}
-      >
-        {children}
-      </body>
+      <body className={`antialiased bg-gray-50 min-h-screen`}>{children}</body>
     </html>
   );
 }

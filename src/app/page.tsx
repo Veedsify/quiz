@@ -1,529 +1,83 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useQuizStore } from "@/lib/store";
-import { quizData } from "@/lib/quizData";
+import { motion } from "framer-motion";
+import { quizData, Criteria, Section } from "@/lib/quizData";
 
-interface UserInfoFormProps {
-  onStart: (name: string, email: string) => void;
+interface ChecklistResponse {
+  selectedOption: string;
+  points: number;
 }
 
-function UserInfoForm({ onStart }: UserInfoFormProps) {
+interface ChecklistResponses {
+  [sectionIndex: number]: {
+    [criteriaIndex: number]: ChecklistResponse;
+  };
+}
+
+export default function DoctorChecklistPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [errors, setErrors] = useState<{ name?: string; email?: string }>({});
+  const [responses, setResponses] = useState<ChecklistResponses>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newErrors: { name?: string; email?: string } = {};
+  const handleResponse = (
+    sectionIndex: number,
+    criteriaIndex: number,
+    selectedOption: string,
+    points: number,
+  ) => {
+    setResponses((prev) => ({
+      ...prev,
+      [sectionIndex]: {
+        ...prev[sectionIndex],
+        [criteriaIndex]: {
+          selectedOption,
+          points,
+        },
+      },
+    }));
+  };
 
+  const calculateScores = () => {
+    let totalScore = 0;
+    const sectionScores = quizData.map((section) => {
+      let sectionScore = 0;
+      const sectionIndex = quizData.indexOf(section);
+
+      if (responses[sectionIndex]) {
+        section.criteria.forEach((criteria, criteriaIndex) => {
+          const response = responses[sectionIndex][criteriaIndex];
+          if (response) {
+            sectionScore += response.points;
+          }
+        });
+      }
+
+      totalScore += sectionScore;
+      return {
+        section: section.section,
+        score: sectionScore,
+        totalPoints: section.totalPoints,
+      };
+    });
+
+    return { totalScore, sectionScores };
+  };
+
+  const handleSubmit = async () => {
     if (!name.trim()) {
-      newErrors.name = "Name is required";
-    }
-
-    if (!email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+      setSubmitMessage("Please enter a name before submitting.");
       return;
     }
 
-    onStart(name.trim(), email.trim());
-  };
-
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
-        className="bg-white rounded-lg border border-gray-200 p-8 w-full max-w-md"
-      >
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            Travel Health Assessment
-          </h1>
-          <p className="text-gray-600">
-            Please provide your information to begin the assessment
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label
-              htmlFor="name"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Full Name
-            </label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                if (errors.name) setErrors({ ...errors, name: undefined });
-              }}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                errors.name ? "border-red-500" : "border-gray-300"
-              }`}
-              placeholder="Enter your full name"
-            />
-            {errors.name && (
-              <motion.p
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-red-500 text-sm mt-1"
-              >
-                {errors.name}
-              </motion.p>
-            )}
-          </div>
-
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Email Address
-            </label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                if (errors.email) setErrors({ ...errors, email: undefined });
-              }}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                errors.email ? "border-red-500" : "border-gray-300"
-              }`}
-              placeholder="Enter your email address"
-            />
-            {errors.email && (
-              <motion.p
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-red-500 text-sm mt-1"
-              >
-                {errors.email}
-              </motion.p>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-gray-900 text-white py-3 px-6 rounded font-semibold hover:bg-gray-800 transition-colors duration-200"
-          >
-            Start Assessment
-          </button>
-        </form>
-      </motion.div>
-    </div>
-  );
-}
-
-interface QuizQuestionProps {
-  sectionIndex: number;
-  criteriaIndex: number;
-  onAnswer: (selectedOption: string, points: number) => void;
-  onNext: () => void;
-  onPrevious: () => void;
-  selectedAnswer?: string;
-  canGoBack: boolean;
-}
-
-function QuizQuestion({
-  sectionIndex,
-  criteriaIndex,
-  onAnswer,
-  onNext,
-  onPrevious,
-  selectedAnswer,
-  canGoBack,
-}: QuizQuestionProps) {
-  const section = quizData[sectionIndex];
-  const criteria = section.criteria[criteriaIndex];
-  const progress = useQuizStore((state) => state.getProgress());
-  const currentQuestionNumber = useQuizStore((state) =>
-    state.getCurrentQuestionNumber(),
-  );
-  const totalQuestions = useQuizStore((state) => state.getTotalQuestions());
-
-  const [textValue, setTextValue] = useState(selectedAnswer || "");
-
-  const calculatePoints = (answer: string) => {
-    if (!answer || !answer.trim()) return 0;
-
-    switch (criteria.inputType) {
-      case "binary":
-        const positiveAnswers = [
-          "Yes",
-          "Provided",
-          "Discussed",
-          "Completed",
-          "Consistently",
-        ];
-        const binaryPoints = positiveAnswers.includes(answer)
-          ? criteria.points
-          : 0;
-
-        return binaryPoints;
-
-      case "multiple":
-        let multiplePoints = 0;
-        // Award more points for better quality answers
-        if (
-          [
-            "Excellent",
-            "Consistently",
-            "Very familiar",
-            "Yes, listed",
-            "Discussed thoroughly",
-          ].includes(answer)
-        ) {
-          multiplePoints = criteria.points;
-        } else if (
-          [
-            "Good",
-            "Sometimes",
-            "Somewhat familiar",
-            "Partially",
-            "Yes",
-            "Somewhat",
-            "Mostly",
-          ].includes(answer)
-        ) {
-          multiplePoints = Math.round(criteria.points * 0.8);
-        } else if (
-          [
-            "Fair",
-            "Rarely",
-            "Not familiar",
-            "Discussed briefly",
-            "No",
-            "Somewhat aware",
-          ].includes(answer)
-        ) {
-          multiplePoints = Math.round(criteria.points * 0.5);
-        } else if (
-          [
-            "Poor",
-            "Never",
-            "Not discussed",
-            "Not applicable",
-            "Not aware",
-            "Unsure",
-          ].includes(answer)
-        ) {
-          multiplePoints = Math.round(criteria.points * 0.2);
-        } else {
-          // Default scoring for other multiple choice options
-          const optionIndex = criteria.options?.indexOf(answer) || 0;
-          multiplePoints = Math.round(
-            criteria.points *
-              Math.max(0.1, 1 - optionIndex / (criteria.options?.length || 1)),
-          );
-        }
-
-        return multiplePoints;
-
-      case "shortText":
-      case "longText":
-        // Award full points for any meaningful text input (more than 3 characters)
-        const textPoints = answer.trim().length > 3 ? criteria.points : 0;
-
-        return textPoints;
-
-      default:
-        return 0;
-    }
-  };
-
-  const handleOptionSelect = (option: string) => {
-    const points = calculatePoints(option);
-    onAnswer(option, points);
-  };
-
-  const handleTextSubmit = () => {
-    if (textValue.trim()) {
-      const points = calculatePoints(textValue);
-      onAnswer(textValue, points);
-    }
-  };
-
-  const renderInput = () => {
-    switch (criteria.inputType) {
-      case "binary":
-      case "multiple":
-        return (
-          <div className="space-y-3">
-            {criteria.options?.map((option) => (
-              <button
-                key={option}
-                onClick={() => handleOptionSelect(option)}
-                className={`w-full p-4 text-left border rounded transition-colors duration-200 ${
-                  selectedAnswer === option
-                    ? "border-gray-900 bg-gray-100 text-gray-900"
-                    : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-                }`}
-              >
-                <div className="flex items-center">
-                  <div
-                    className={`w-4 h-4 rounded-full border-2 mr-3 ${
-                      selectedAnswer === option
-                        ? "border-gray-900 bg-gray-900"
-                        : "border-gray-300"
-                    }`}
-                  >
-                    {selectedAnswer === option && (
-                      <div className="w-2 h-2 bg-white rounded-full m-0.5" />
-                    )}
-                  </div>
-                  <span className="font-medium">{option}</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        );
-
-      case "shortText":
-        return (
-          <div className="space-y-4">
-            <input
-              type="text"
-              value={textValue}
-              onChange={(e) => setTextValue(e.target.value)}
-              placeholder={criteria.placeholder}
-              className="w-full px-4 py-3 border border-gray-300 rounded focus:ring-1 focus:ring-gray-500 focus:border-gray-500 transition-colors duration-200"
-            />
-            <button
-              onClick={handleTextSubmit}
-              disabled={!textValue.trim()}
-              className={`w-full py-3 px-6 rounded font-semibold transition-colors duration-200 ${
-                textValue.trim()
-                  ? "bg-gray-900 text-white hover:bg-gray-800"
-                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
-              }`}
-            >
-              Confirm Answer
-            </button>
-          </div>
-        );
-
-      case "longText":
-        return (
-          <div className="space-y-4">
-            <textarea
-              value={textValue}
-              onChange={(e) => setTextValue(e.target.value)}
-              placeholder={criteria.placeholder}
-              rows={4}
-              className="w-full px-4 py-3 border border-gray-300 rounded focus:ring-1 focus:ring-gray-500 focus:border-gray-500 transition-colors duration-200 resize-none"
-            />
-            <button
-              onClick={handleTextSubmit}
-              disabled={!textValue.trim()}
-              className={`w-full py-3 px-6 rounded font-semibold transition-colors duration-200 ${
-                textValue.trim()
-                  ? "bg-gray-900 text-white hover:bg-gray-800"
-                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
-              }`}
-            >
-              Confirm Answer
-            </button>
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg border border-gray-200 p-8 w-full max-w-2xl">
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-gray-600">
-              Question {currentQuestionNumber} of {totalQuestions}
-            </span>
-            <span className="text-sm font-medium text-gray-600">
-              {Math.round(progress)}% Complete
-            </span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <motion.div
-              className="bg-blue-600 h-2 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.3 }}
-            />
-          </div>
-        </div>
-
-        {/* Section Title */}
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold text-gray-700 mb-2">
-            {section.section}
-          </h2>
-          <h3 className="text-2xl font-bold text-gray-800">
-            {criteria.description}
-          </h3>
-          <p className="text-sm text-gray-500 mt-2">
-            {criteria.points} point{criteria.points !== 1 ? "s" : ""} possible
-          </p>
-        </div>
-
-        {/* Input Area */}
-        <div className="mb-8">{renderInput()}</div>
-
-        {/* Navigation Buttons */}
-        <div className="flex justify-between">
-          <button
-            onClick={onPrevious}
-            disabled={!canGoBack}
-            className={`px-6 py-3 rounded font-semibold transition-colors duration-200 ${
-              canGoBack
-                ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                : "bg-gray-100 text-gray-400 cursor-not-allowed"
-            }`}
-          >
-            Previous
-          </button>
-
-          <button
-            onClick={onNext}
-            disabled={!selectedAnswer}
-            className={`px-6 py-3 rounded font-semibold transition-colors duration-200 ${
-              selectedAnswer
-                ? "bg-gray-900 text-white hover:bg-gray-800"
-                : "bg-gray-200 text-gray-400 cursor-not-allowed"
-            }`}
-          >
-            {currentQuestionNumber === totalQuestions ? "Finish" : "Next"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-interface ThankYouPageProps {
-  onRestart: () => void;
-}
-
-function ThankYouPage({ onRestart }: ThankYouPageProps) {
-  const { userInfo } = useQuizStore();
-
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg border border-gray-200 p-8 w-full max-w-2xl text-center">
-        <div>
-          <div className="mb-6">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-8 h-8 text-gray-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">
-              Assessment Completed!
-            </h1>
-            <p className="text-gray-600">
-              Thank you, {userInfo?.name}, for completing the travel health
-              assessment.
-            </p>
-          </div>
-
-          <div className="bg-gray-50 rounded p-6 mb-8">
-            <p className="text-gray-800 mb-4">
-              Your responses have been successfully submitted and recorded.
-            </p>
-            <p className="text-gray-600 text-sm">
-              The assessment administrator will review your responses and
-              provide feedback accordingly.
-            </p>
-          </div>
-
-          <button
-            onClick={onRestart}
-            className="bg-gray-900 text-white py-3 px-8 rounded font-semibold hover:bg-gray-800 transition-colors duration-200"
-          >
-            Take Another Assessment
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function HomePage() {
-  const {
-    userInfo,
-    setUserInfo,
-    currentSection,
-    currentCriteria,
-    responses,
-    setResponse,
-    nextQuestion,
-    previousQuestion,
-    isCompleted,
-    resetQuiz,
-  } = useQuizStore();
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const handleStart = (name: string, email: string) => {
-    setUserInfo({ name, email });
-  };
-
-  const handleAnswer = (selectedOption: string, points: number) => {
-    // Answer saved
-    setResponse(currentSection, currentCriteria, selectedOption, points);
-  };
-
-  const handleNext = async () => {
-    const isLastQuestion =
-      currentSection === quizData.length - 1 &&
-      currentCriteria === quizData[currentSection].criteria.length - 1;
-
-    if (isLastQuestion) {
-      // Auto-submit when finishing the last question
-      await submitQuiz();
-    } else {
-      nextQuestion();
-    }
-  };
-
-  const submitQuiz = async () => {
-    if (!userInfo || isSubmitted) return;
-
     setIsSubmitting(true);
+    setSubmitMessage("");
 
     try {
-      // First ensure scores are calculated before submission
-      const { calculateScores } = useQuizStore.getState();
-      calculateScores();
-
-      // Get fresh calculated values after calculation
-      const freshState = useQuizStore.getState();
+      const { totalScore, sectionScores } = calculateScores();
 
       const response = await fetch("/api/quiz", {
         method: "POST",
@@ -531,76 +85,451 @@ export default function HomePage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: userInfo.name,
-          email: userInfo.email,
-          responses: freshState.responses,
-          totalScore: freshState.totalScore,
-          sectionScores: freshState.sectionScores,
+          name: name.trim(),
+          email: email.trim() || "Not provided",
+          responses,
+          totalScore,
+          sectionScores,
         }),
       });
 
       if (response.ok) {
         setIsSubmitted(true);
-        // Complete the quiz after successful submission
-        useQuizStore.getState().completeQuiz();
+        setSubmitMessage("Assessment submitted successfully!");
       } else {
-        // Failed to submit quiz, but continue
-        useQuizStore.getState().completeQuiz();
+        setSubmitMessage("Failed to submit assessment. Please try again.");
       }
     } catch {
-      // Error submitting quiz, but continue
-      useQuizStore.getState().completeQuiz();
+      setSubmitMessage("Error submitting assessment. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const canGoBack = currentSection > 0 || currentCriteria > 0;
-
-  const getSelectedAnswer = () => {
-    return responses[currentSection]?.[currentCriteria]?.selectedOption;
+  const handleReset = () => {
+    setName("");
+    setEmail("");
+    setResponses({});
+    setIsSubmitted(false);
+    setSubmitMessage("");
   };
 
-  // Show thank you page after completion
-  if (isCompleted) {
-    return <ThankYouPage onRestart={resetQuiz} />;
-  }
+  const renderInput = (
+    section: Section,
+    sectionIndex: number,
+    criteria: Criteria,
+    criteriaIndex: number,
+  ) => {
+    const currentResponse = responses[sectionIndex]?.[criteriaIndex];
 
-  // Show user info form at the beginning
-  if (!userInfo) {
-    return <UserInfoForm onStart={handleStart} />;
-  }
+    switch (criteria.inputType) {
+      case "binary":
+        return (
+          <div className="flex gap-6">
+            {criteria.options?.map((option: string) => (
+              <label
+                key={option}
+                className={`flex items-center cursor-pointer px-4 py-3 rounded-lg border-2 transition-all duration-200 ${
+                  currentResponse?.selectedOption === option
+                    ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name={`${sectionIndex}-${criteriaIndex}`}
+                  value={option}
+                  checked={currentResponse?.selectedOption === option}
+                  onChange={() =>
+                    handleResponse(
+                      sectionIndex,
+                      criteriaIndex,
+                      option,
+                      criteria.points,
+                    )
+                  }
+                  className="sr-only"
+                />
+                <div
+                  className={`w-5 h-5 rounded-full border-2 mr-3 flex items-center justify-center ${
+                    currentResponse?.selectedOption === option
+                      ? "border-emerald-500 bg-emerald-500"
+                      : "border-gray-300"
+                  }`}
+                >
+                  {currentResponse?.selectedOption === option && (
+                    <div className="w-2 h-2 bg-white rounded-full" />
+                  )}
+                </div>
+                <span className="font-medium text-sm">{option}</span>
+              </label>
+            ))}
+          </div>
+        );
 
-  // Show loading state during submission
-  if (isSubmitting) {
+      case "multiple":
+        return (
+          <div className="relative">
+            <select
+              value={currentResponse?.selectedOption || ""}
+              onChange={(e) => {
+                if (e.target.value) {
+                  handleResponse(
+                    sectionIndex,
+                    criteriaIndex,
+                    e.target.value,
+                    criteria.points,
+                  );
+                }
+              }}
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 bg-white text-gray-700 font-medium appearance-none cursor-pointer"
+            >
+              <option value="" className="text-gray-500">
+                Select an option...
+              </option>
+              {criteria.options?.map((option: string) => (
+                <option key={option} value={option} className="py-2">
+                  {option}
+                </option>
+              ))}
+            </select>
+            <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+              <svg
+                className="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
+          </div>
+        );
+
+      case "shortText":
+        return (
+          <input
+            type="text"
+            value={currentResponse?.selectedOption || ""}
+            onChange={(e) =>
+              handleResponse(
+                sectionIndex,
+                criteriaIndex,
+                e.target.value,
+                criteria.points,
+              )
+            }
+            placeholder={criteria.placeholder}
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 font-medium"
+          />
+        );
+
+      case "longText":
+        return (
+          <textarea
+            value={currentResponse?.selectedOption || ""}
+            onChange={(e) =>
+              handleResponse(
+                sectionIndex,
+                criteriaIndex,
+                e.target.value,
+                criteria.points,
+              )
+            }
+            placeholder={criteria.placeholder}
+            rows={4}
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 resize-vertical font-medium"
+          />
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  if (isSubmitted) {
+    const { totalScore } = calculateScores();
+    const totalPossible = quizData.reduce(
+      (sum, section) => sum + section.totalPoints,
+      0,
+    );
+
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-8 w-full max-w-md text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">
-            Submitting Assessment
+      <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-gray-50 to-emerald-50">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white rounded-2xl shadow-xl border border-gray-100 p-10 w-full max-w-lg text-center"
+        >
+          <div className="w-20 h-20 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-lg">
+            <svg
+              className="w-10 h-10 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="3"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </div>
+
+          <h2 className="text-3xl font-bold text-gray-800 mb-4">
+            Assessment Complete
           </h2>
-          <p className="text-gray-600">
-            Please wait while we save your responses...
+
+          <p className="text-gray-600 mb-8 text-lg">
+            The doctor assessment has been submitted successfully.
           </p>
-        </div>
+
+          <div className="bg-gradient-to-r from-emerald-50 to-indigo-50 rounded-xl p-6 mb-8 border border-emerald-100">
+            <p className="text-sm font-medium text-gray-600 mb-2">
+              Total Score
+            </p>
+            <p className="text-4xl font-bold text-gray-800 mb-1">
+              {totalScore}
+            </p>
+            <p className="text-lg text-gray-600">
+              out of {totalPossible} points
+            </p>
+            <div className="w-full bg-gray-200 rounded-full h-3 mt-4">
+              <div
+                className="bg-gradient-to-r from-emerald-500 to-indigo-600 h-3 rounded-full transition-all duration-1000"
+                style={{ width: `${(totalScore / totalPossible) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          <button
+            onClick={handleReset}
+            className="w-full bg-gradient-to-r from-gray-800 to-gray-900 text-white py-4 px-8 rounded-xl font-semibold hover:from-gray-700 hover:to-gray-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+          >
+            Start New Assessment
+          </button>
+        </motion.div>
       </div>
     );
   }
 
-  // Show quiz questions
   return (
-    <AnimatePresence mode="wait">
-      <QuizQuestion
-        key={`${currentSection}-${currentCriteria}`}
-        sectionIndex={currentSection}
-        criteriaIndex={currentCriteria}
-        onAnswer={handleAnswer}
-        onNext={handleNext}
-        onPrevious={previousQuestion}
-        selectedAnswer={getSelectedAnswer()}
-        canGoBack={canGoBack}
-      />
-    </AnimatePresence>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50 py-12">
+      <div className="max-w-5xl mx-auto px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
+        >
+          {/* Header */}
+          <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-10 py-12 text-center">
+            <h1 className="text-4xl font-bold text-white mb-4">
+              Doctor Assessment Checklist
+            </h1>
+            <p className="text-emerald-100 text-lg max-w-2xl mx-auto">
+              Comprehensive evaluation tool for assessing doctor performance
+              during travel health consultations
+            </p>
+          </div>
+
+          <div className="p-10">
+            {/* User Info */}
+            <div className="bg-gradient-to-r from-gray-50 to-emerald-50 rounded-xl p-8 mb-12 border border-gray-100">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center mr-3">
+                  <svg
+                    className="w-5 h-5 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                </div>
+                Assessment Information
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-semibold text-gray-700 mb-3"
+                  >
+                    Doctor/Assessor Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 font-medium"
+                    placeholder="Enter full name"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-semibold text-gray-700 mb-3"
+                  >
+                    Email Address (Optional)
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 font-medium"
+                    placeholder="Enter email address"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Checklist Sections */}
+            <div className="space-y-10">
+              {quizData.map((section, sectionIndex) => (
+                <motion.div
+                  key={sectionIndex}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: sectionIndex * 0.1 }}
+                  className="border border-black/30 rounded-xl p-8 bg-white transition-shadow duration-200"
+                >
+                  <div className="flex justify-between items-center mb-8">
+                    <h3 className="text-2xl font-bold text-gray-800 flex items-center">
+                      <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center mr-4 text-white font-bold text-sm">
+                        {sectionIndex + 1}
+                      </div>
+                      {section.section}
+                    </h3>
+                    <span className="text-sm font-semibold text-emerald-600 bg-emerald-100 px-4 py-2 rounded-full">
+                      {section.totalPoints} points
+                    </span>
+                  </div>
+
+                  <div className="space-y-8">
+                    {section.criteria.map((criteria, criteriaIndex) => (
+                      <div key={criteriaIndex} className=" p-4">
+                        <div className="flex justify-between items-start mb-4">
+                          <label className="block text-base font-medium text-gray-700 flex-1 leading-relaxed">
+                            {criteria.description}
+                          </label>
+                          <span className="text-xs font-bold text-indigo-600 bg-indigo-100 px-3 py-1 rounded-full ml-6 whitespace-nowrap">
+                            {criteria.points} pts
+                          </span>
+                        </div>
+                        <div className="mt-4">
+                          {renderInput(
+                            section,
+                            sectionIndex,
+                            criteria,
+                            criteriaIndex,
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Submit Section */}
+            <div className="mt-12 pt-8 border-t-2 border-gray-100">
+              {submitMessage && (
+                <div
+                  className={`mb-6 p-4 rounded-xl border-2 ${
+                    submitMessage.includes("successfully")
+                      ? "bg-green-50 text-green-700 border-green-200"
+                      : "bg-red-50 text-red-700 border-red-200"
+                  }`}
+                >
+                  <div className="flex items-center">
+                    <svg
+                      className={`w-5 h-5 mr-2 ${
+                        submitMessage.includes("successfully")
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d={
+                          submitMessage.includes("successfully")
+                            ? "M5 13l4 4L19 7"
+                            : "M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        }
+                      />
+                    </svg>
+                    {submitMessage}
+                  </div>
+                </div>
+              )}
+
+              <div className="text-center">
+                <button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting || !name.trim()}
+                  className={`px-12 py-4 rounded-xl font-bold text-lg transition-all duration-200 shadow-lg ${
+                    isSubmitting || !name.trim()
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-gradient-to-r from-emerald-600 to-indigo-700 text-white hover:from-emerald-700 hover:to-indigo-800 hover:shadow-xl transform hover:-translate-y-0.5"
+                  }`}
+                >
+                  {isSubmitting ? (
+                    <div className="flex items-center">
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-500"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      Submitting...
+                    </div>
+                  ) : (
+                    "Submit Assessment"
+                  )}
+                </button>
+
+                <p className="text-center text-sm text-gray-500 mt-6 bg-gray-50 rounded-lg p-4">
+                  <span className="font-medium">Note:</span> Name is required to
+                  submit. All checklist items are optional - only mark what
+                  applies during the consultation.
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </div>
   );
 }
