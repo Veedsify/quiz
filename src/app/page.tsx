@@ -23,12 +23,104 @@ export default function DoctorChecklistPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
 
+  const calculatePoints = (selectedOption: string, criteria: Criteria) => {
+    if (!selectedOption || !selectedOption.trim()) return 0;
+
+    switch (criteria.inputType) {
+      case "binary": { // Award full points for positive binary labels; zero for negatives
+        const positive = [
+          "yes",
+          "provided",
+          "discussed",
+          "completed",
+          "arranged",
+          "done",
+          "true",
+        ];
+        const sel = selectedOption.trim().toLowerCase();
+        return positive.includes(sel) ? criteria.points : 0;
+      }
+
+      case "multiple":
+        // Award points based on quality of response - scale properly
+        if (
+          [
+            "Excellent",
+            "Comprehensive",
+            "Detailed explanation",
+            "Actively encouraged",
+            "Complete and accurate",
+            "Arranged when needed",
+            "Discussed thoroughly",
+            "Used multiple sources",
+          ].includes(selectedOption)
+        ) {
+          return criteria.points; // 100% of points
+        } else if (
+          [
+            "Good",
+            "Adequate",
+            "Basic advice",
+            "Responded well",
+            "Mostly complete",
+            "Used one source",
+          ].includes(selectedOption)
+        ) {
+          return Math.round(criteria.points * 0.75); // 75% of points
+        } else if (
+          [
+            "Fair",
+            "Basic",
+            "Brief mention",
+            "Minimal encouragement",
+            "Basic documentation",
+            "Mentioned briefly",
+            "Discussed briefly",
+          ].includes(selectedOption)
+        ) {
+          return Math.round(criteria.points * 0.5); // 50% of points
+        } else if (
+          [
+            "Poor",
+            "Inadequate",
+            "Not discussed",
+            "Discouraged questions",
+            "Relied on memory",
+            "No consultation",
+          ].includes(selectedOption)
+        ) {
+          return 0; // 0% of points for poor performance
+        } else if (
+          [
+            "Not applicable",
+            "Not needed",
+            "Should have arranged",
+            "Unclear",
+          ].includes(selectedOption)
+        ) {
+          return criteria.points; // Full points for N/A when appropriate
+        } else {
+          // For any other options, award 25% of points
+          return Math.round(criteria.points * 0.25);
+        }
+
+      case "shortText":
+      case "longText":
+        // Award full points for any meaningful text input
+        return selectedOption.trim().length > 2 ? criteria.points : 0;
+
+      default:
+        return 0;
+    }
+  };
+
   const handleResponse = (
     sectionIndex: number,
     criteriaIndex: number,
     selectedOption: string,
-    points: number,
+    criteria: Criteria,
   ) => {
+    const points = calculatePoints(selectedOption, criteria);
     setResponses((prev) => ({
       ...prev,
       [sectionIndex]: {
@@ -39,6 +131,19 @@ export default function DoctorChecklistPage() {
         },
       },
     }));
+  };
+
+  const clearResponse = (sectionIndex: number, criteriaIndex: number) => {
+    setResponses((prev) => {
+      const next = { ...prev };
+      if (next[sectionIndex]) {
+        delete next[sectionIndex][criteriaIndex];
+        if (Object.keys(next[sectionIndex]).length === 0) {
+          delete next[sectionIndex];
+        }
+      }
+      return next;
+    });
   };
 
   const calculateScores = () => {
@@ -93,14 +198,20 @@ export default function DoctorChecklistPage() {
         }),
       });
 
+      const responseData = await response.json();
+
       if (response.ok) {
         setIsSubmitted(true);
         setSubmitMessage("Assessment submitted successfully!");
       } else {
-        setSubmitMessage("Failed to submit assessment. Please try again.");
+        setSubmitMessage(
+          `Failed to submit assessment: ${responseData.error || "Unknown error"}. Please try again.`,
+        );
       }
-    } catch {
-      setSubmitMessage("Error submitting assessment. Please try again.");
+    } catch (error) {
+      setSubmitMessage(
+        `Error submitting assessment: ${error instanceof Error ? error.message : "Unknown error"}. Please try again.`,
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -126,44 +237,48 @@ export default function DoctorChecklistPage() {
       case "binary":
         return (
           <div className="flex gap-6">
-            {criteria.options?.map((option: string) => (
-              <label
-                key={option}
-                className={`flex items-center cursor-pointer px-4 py-3 rounded-lg border-2 transition-all duration-200 ${
-                  currentResponse?.selectedOption === option
-                    ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name={`${sectionIndex}-${criteriaIndex}`}
-                  value={option}
-                  checked={currentResponse?.selectedOption === option}
-                  onChange={() =>
-                    handleResponse(
-                      sectionIndex,
-                      criteriaIndex,
-                      option,
-                      criteria.points,
-                    )
-                  }
-                  className="sr-only"
-                />
-                <div
-                  className={`w-5 h-5 rounded-full border-2 mr-3 flex items-center justify-center ${
-                    currentResponse?.selectedOption === option
-                      ? "border-emerald-500 bg-emerald-500"
-                      : "border-gray-300"
+            {criteria.options?.map((option: string) => {
+              const isSelected = currentResponse?.selectedOption === option;
+
+              return (
+                <label
+                  key={option}
+                  className={`flex items-center cursor-pointer px-4 py-3 rounded-lg border-2 transition-all duration-200 ${
+                    isSelected
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
+                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                   }`}
                 >
-                  {currentResponse?.selectedOption === option && (
-                    <div className="w-2 h-2 bg-white rounded-full" />
-                  )}
-                </div>
-                <span className="font-medium text-sm">{option}</span>
-              </label>
-            ))}
+                  <input
+                    type="radio"
+                    name={`${sectionIndex}-${criteriaIndex}`}
+                    value={option}
+                    checked={isSelected}
+                    onChange={() => {
+                      handleResponse(
+                        sectionIndex,
+                        criteriaIndex,
+                        option,
+                        criteria,
+                      );
+                    }}
+                    className="sr-only"
+                  />
+                  <div
+                    className={`w-5 h-5 rounded-full border-2 mr-3 flex items-center justify-center ${
+                      isSelected
+                        ? "border-blue-500 bg-blue-500"
+                        : "border-gray-300"
+                    }`}
+                  >
+                    {isSelected && (
+                      <div className="w-2 h-2 bg-white rounded-full" />
+                    )}
+                  </div>
+                  <span className="font-medium text-sm">{option}</span>
+                </label>
+              );
+            })}
           </div>
         );
 
@@ -178,7 +293,7 @@ export default function DoctorChecklistPage() {
                     sectionIndex,
                     criteriaIndex,
                     e.target.value,
-                    criteria.points,
+                    criteria,
                   );
                 }
               }}
@@ -221,7 +336,7 @@ export default function DoctorChecklistPage() {
                 sectionIndex,
                 criteriaIndex,
                 e.target.value,
-                criteria.points,
+                criteria,
               )
             }
             placeholder={criteria.placeholder}
@@ -238,7 +353,7 @@ export default function DoctorChecklistPage() {
                 sectionIndex,
                 criteriaIndex,
                 e.target.value,
-                criteria.points,
+                criteria,
               )
             }
             placeholder={criteria.placeholder}

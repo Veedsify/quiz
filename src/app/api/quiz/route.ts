@@ -7,13 +7,7 @@ export async function POST(request: NextRequest) {
 
     const { name, email, responses, totalScore, sectionScores } = body;
 
-    if (
-      !name ||
-      !email ||
-      !responses ||
-      totalScore === undefined ||
-      !sectionScores
-    ) {
+    if (!name || !responses || totalScore === undefined || !sectionScores) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
@@ -21,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate data types
-    if (typeof name !== "string" || typeof email !== "string") {
+    if (typeof name !== "string" || (email && typeof email !== "string")) {
       return NextResponse.json(
         { error: "Invalid data types" },
         { status: 400 },
@@ -37,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     const quizResponse = {
       name: name.trim(),
-      email: email.trim(),
+      email: email ? email.trim() : "Not provided",
       responses: JSON.stringify(responses),
       totalScore,
       sectionScores: JSON.stringify(sectionScores),
