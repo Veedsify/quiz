@@ -436,15 +436,15 @@ export default function DoctorChecklistPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50 py-12">
-      <div className="max-w-5xl mx-auto px-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50 md:py-12">
+      <div className="max-w-5xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
+          className="bg-white md:rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-10 py-12 text-center">
+          <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 p-2 lg:px-10 py-12 text-center">
             <h1 className="text-4xl font-bold text-white mb-4">
               Doctor Assessment Checklist
             </h1>
@@ -454,9 +454,9 @@ export default function DoctorChecklistPage() {
             </p>
           </div>
 
-          <div className="p-10">
+          <div className="p-2 md:p-10">
             {/* User Info */}
-            <div className="bg-gradient-to-r from-gray-50 to-emerald-50 rounded-xl p-8 mb-12 border border-gray-100">
+            <div className="bg-gradient-to-r from-gray-50 to-emerald-50 rounded-xl p-2 md:p-8 mb-12 border border-gray-100">
               <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
                 <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center mr-3">
                   <svg
@@ -482,7 +482,7 @@ export default function DoctorChecklistPage() {
                     htmlFor="name"
                     className="block text-sm font-semibold text-gray-700 mb-3"
                   >
-                    Doctor/Assessor Name *
+                    Candidates’s Name *
                   </label>
                   <input
                     type="text"
@@ -520,7 +520,7 @@ export default function DoctorChecklistPage() {
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: sectionIndex * 0.1 }}
-                  className="border border-black/30 rounded-xl p-8 bg-white transition-shadow duration-200"
+                  className="border border-black/30 rounded-xl p-2 py-8 md:p-8 bg-white transition-shadow duration-200"
                 >
                   <div className="flex justify-between items-center mb-8">
                     <h3 className="text-2xl font-bold text-gray-800 flex items-center">
@@ -538,7 +538,7 @@ export default function DoctorChecklistPage() {
                     {section.criteria.map((criteria, criteriaIndex) => (
                       <div key={criteriaIndex} className=" p-4">
                         <div className="flex justify-between items-start mb-4">
-                          <label className="block text-base font-medium text-gray-700 flex-1 leading-relaxed">
+                          <label className="block text-sm md:text-base font-medium text-gray-700 flex-1 leading-relaxed">
                             {criteria.description}
                           </label>
                           <span className="text-xs font-bold text-indigo-600 bg-indigo-100 px-3 py-1 rounded-full ml-6 whitespace-nowrap">
