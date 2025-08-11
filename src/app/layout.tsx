@@ -7,7 +7,7 @@ import "@fontsource-variable/geist";
 export const metadata: Metadata = {
   title: "Doctor Assessment Checklist - Travel Health Consultations",
   description:
-    "Checklist for evaluating doctor performance during travel health consultations",
+    "Checklist for evaluating doctors performance during travel health consultations",
 };
 
 export default function RootLayout({
