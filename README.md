@@ -1,4 +1,5 @@
-# Travel Health Assessment Quiz App
+# NSTM, Certification Course.
+# Capstone Project Assessment
 
 A comprehensive quiz application built with Next.js 15 for conducting travel health assessments. Features a clean, minimalistic UI with smooth animations and an admin dashboard for reviewing responses.
 

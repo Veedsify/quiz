@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { quizData, Criteria, Section } from "@/lib/quizData";
 
 interface ChecklistResponse {
@@ -461,8 +462,19 @@ export default function DoctorChecklistPage() {
         >
           {/* Header */}
           <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 p-2 lg:px-10 py-12 text-center">
+            <div className="flex flex-col items-center justify-center mb-6">
+              <Image
+                src="/NSTM.png"
+                alt="Nigerian Society of Travel Medicine"
+                width={200}
+                height={50}
+                className="mb-4 bg-white rounded-full p-2 shadow-lg"
+                priority
+              />
+            </div>
             <h1 className="text-4xl font-bold text-white mb-4">
-              Doctor Assessment Checklist
+              NSTM, Certification Course. <br />
+              Capstone Project Assessment
             </h1>
             <p className="text-emerald-100 text-lg max-w-2xl mx-auto">
               Comprehensive evaluation tool for assessing doctor performance
@@ -697,6 +709,29 @@ export default function DoctorChecklistPage() {
                   submit. All checklist items are optional - only mark what
                   applies during the consultation.
                 </p>
+              </div>
+            </div>
+          </div>
+
+          {/* NSTM Footer */}
+          <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 p-6 text-center">
+            <div className="flex flex-col items-center justify-center space-y-2">
+              <div className="flex items-center space-x-3">
+                <Image
+                  src="/NSTM.png"
+                  alt="Nigerian Society of Travel Medicine"
+                  width={40}
+                  height={40}
+                  className="bg-white rounded-full p-1"
+                />
+                <div className="text-left">
+                  <p className="text-white font-semibold text-sm">
+                    Nigerian Society of Travel Medicine
+                  </p>
+                  <p className="text-emerald-100 text-xs">
+                    all about traveller&apos;s health
+                  </p>
+                </div>
               </div>
             </div>
           </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import { quizData } from "@/lib/quizData";
 
 interface QuizResponse {
@@ -46,19 +47,29 @@ function AdminLogin({ onLogin, error, loading }: AdminLoginProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-emerald-50 to-emerald-100">
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="bg-white rounded-lg border border-gray-200 p-8 w-full max-w-md"
+        className="bg-white rounded-xl border border-emerald-200 shadow-2xl p-8 w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+          <div className="flex justify-center mb-6">
+            <Image
+              src="/NSTM.png"
+              alt="Nigerian Society of Travel Medicine"
+              width={80}
+              height={80}
+              className="bg-emerald-50 rounded-full shadow-lg p-2"
+              priority
+            />
+          </div>
+          <h1 className="text-3xl font-bold text-emerald-800 mb-2">
             Admin Access
           </h1>
-          <p className="text-gray-600">
-            Enter the admin password to view quiz responses
+          <p className="text-emerald-600">
+            Enter the admin password to view assessment responses
           </p>
         </div>
 
@@ -75,8 +86,8 @@ function AdminLogin({ onLogin, error, loading }: AdminLoginProps) {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className={`w-full px-4 py-3 border rounded focus:ring-1 focus:ring-gray-500 focus:border-gray-500 transition-colors duration-200 ${
-                error ? "border-red-500" : "border-gray-300"
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors duration-200 ${
+                error ? "border-red-500" : "border-emerald-300"
               }`}
               placeholder="Enter admin password"
               required
@@ -87,7 +98,7 @@ function AdminLogin({ onLogin, error, loading }: AdminLoginProps) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gray-900 text-white py-3 px-6 rounded font-semibold hover:bg-gray-800 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 text-white py-3 px-6 rounded-lg font-semibold hover:from-emerald-700 hover:to-emerald-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
           >
             {loading ? "Authenticating..." : "Access Admin Panel"}
           </button>
@@ -269,12 +280,14 @@ interface ResponsesTableProps {
   responses: QuizResponse[];
   onViewDetail: (response: QuizResponse) => void;
   onDelete: (response: QuizResponse) => void;
+  onLogout: () => void;
 }
 
 function ResponsesTable({
   responses,
   onViewDetail,
   onDelete,
+  onLogout,
 }: ResponsesTableProps) {
   const totalPossible = quizData.reduce(
     (sum, section) => sum + section.totalPoints,
@@ -282,14 +295,36 @@ function ResponsesTable({
   );
 
   return (
-    <div className="min-h-screen p-8">
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div className="min-h-screen p-0 lg:p-8 bg-gradient-to-br from-emerald-50 to-emerald-100">
+      <div className="bg-white  min-h-screen rounded-xl border border-emerald-200 shadow-2xl overflow-hidden">
         <div className="p-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">
-              Quiz Response Dashboard
-            </h1>
-            <p className="text-gray-600">{responses.length} total responses</p>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center">
+                <Image
+                  src="/NSTM.png"
+                  alt="Nigerian Society of Travel Medicine"
+                  width={60}
+                  height={60}
+                  className="rounded-full shadow-md mr-4"
+                  priority
+                />
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-800 mb-2">
+                    Assessment Dashboard
+                  </h1>
+                  <p className="text-gray-600">
+                    {responses.length} total responses
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={onLogout}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
+              >
+                Logout
+              </button>
+            </div>
           </div>
 
           {responses.length === 0 ? (
@@ -506,6 +541,7 @@ export default function AdminPage() {
         responses={responses}
         onViewDetail={handleViewDetail}
         onDelete={handleDelete}
+        onLogout={() => setIsAuthenticated(false)}
       />
       <AnimatePresence>
         {selectedResponse && (
