@@ -18,6 +18,8 @@ interface ChecklistResponses {
 export default function DoctorChecklistPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [accessorsName, setAccessorsName] = useState("");
+  const [accessorsEmail, setAccessorsEmail] = useState("");
   const [responses, setResponses] = useState<ChecklistResponses>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -179,6 +181,16 @@ export default function DoctorChecklistPage() {
       return;
     }
 
+    if (!accessorsName.trim()) {
+      setSubmitMessage("Please enter the assessor's name before submitting.");
+      return;
+    }
+
+    if (!accessorsEmail.trim()) {
+      setSubmitMessage("Please enter the assessor's email before submitting.");
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitMessage("");
 
@@ -193,6 +205,8 @@ export default function DoctorChecklistPage() {
         body: JSON.stringify({
           name: name.trim(),
           email: email.trim() || "Not provided",
+          accessorsName: accessorsName.trim(),
+          accessorsEmail: accessorsEmail.trim(),
           responses,
           totalScore,
           sectionScores,
@@ -221,6 +235,8 @@ export default function DoctorChecklistPage() {
   const handleReset = () => {
     setName("");
     setEmail("");
+    setAccessorsName("");
+    setAccessorsEmail("");
     setResponses({});
     setIsSubmitted(false);
     setSubmitMessage("");
@@ -482,7 +498,7 @@ export default function DoctorChecklistPage() {
                     htmlFor="name"
                     className="block text-sm font-semibold text-gray-700 mb-3"
                   >
-                    Candidate’s Name *
+                    Candidate&apos;s Name *
                   </label>
                   <input
                     type="text"
@@ -498,7 +514,7 @@ export default function DoctorChecklistPage() {
                     htmlFor="email"
                     className="block text-sm font-semibold text-gray-700 mb-3"
                   >
-                    Assessor’s email (Optional)
+                    Candidate&apos;s Email (Optional)
                   </label>
                   <input
                     type="email"
@@ -507,6 +523,38 @@ export default function DoctorChecklistPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 font-medium"
                     placeholder="Enter email address"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="accessorsName"
+                    className="block text-sm font-semibold text-gray-700 mb-3"
+                  >
+                    Assessor&apos;s Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="accessorsName"
+                    value={accessorsName}
+                    onChange={(e) => setAccessorsName(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 font-medium"
+                    placeholder="Enter assessor's name"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="accessorsEmail"
+                    className="block text-sm font-semibold text-gray-700 mb-3"
+                  >
+                    Assessor&apos;s Email *
+                  </label>
+                  <input
+                    type="email"
+                    id="accessorsEmail"
+                    value={accessorsEmail}
+                    onChange={(e) => setAccessorsEmail(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 font-medium"
+                    placeholder="Enter assessor's email"
                   />
                 </div>
               </div>
@@ -600,9 +648,17 @@ export default function DoctorChecklistPage() {
               <div className="text-center">
                 <button
                   onClick={handleSubmit}
-                  disabled={isSubmitting || !name.trim()}
+                  disabled={
+                    isSubmitting ||
+                    !name.trim() ||
+                    !accessorsName.trim() ||
+                    !accessorsEmail.trim()
+                  }
                   className={`px-12 py-4 rounded-xl font-bold text-lg transition-all duration-200 shadow-lg ${
-                    isSubmitting || !name.trim()
+                    isSubmitting ||
+                    !name.trim() ||
+                    !accessorsName.trim() ||
+                    !accessorsEmail.trim()
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                       : "bg-gradient-to-r from-emerald-600 to-indigo-700 text-white hover:from-emerald-700 hover:to-indigo-800 hover:shadow-xl transform hover:-translate-y-0.5"
                   }`}

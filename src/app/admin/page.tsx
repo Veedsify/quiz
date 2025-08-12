@@ -8,6 +8,8 @@ interface QuizResponse {
   id: number;
   name: string;
   email: string;
+  accessorsName: string;
+  accessorsEmail: string;
   responses: string;
   totalScore: number;
   sectionScores: string;
@@ -128,9 +130,19 @@ function ResponseDetail({ response, onClose }: ResponseDetailProps) {
               <h2 className="text-2xl font-bold text-gray-800 mb-2">
                 Assessment Details
               </h2>
-              <p className="text-gray-600">
-                {response.name} ({response.email})
-              </p>
+              <div className="space-y-1">
+                <p className="text-gray-600">
+                  <span className="font-medium">Candidate:</span>{" "}
+                  {response.name}
+                  {response.email && response.email !== "Not provided" && (
+                    <span> ({response.email})</span>
+                  )}
+                </p>
+                <p className="text-gray-600">
+                  <span className="font-medium">Assessor:</span>{" "}
+                  {response.accessorsName} ({response.accessorsEmail})
+                </p>
+              </div>
               <p className="text-sm text-gray-500">
                 Completed: {new Date(response.completedAt).toLocaleString()}
               </p>
@@ -290,10 +302,16 @@ function ResponsesTable({
                 <thead>
                   <tr className="border-b-2 border-gray-200">
                     <th className="text-left py-4 px-6 font-semibold text-gray-800">
-                      Name
+                      Candidate Name
                     </th>
                     <th className="text-left py-4 px-6 font-semibold text-gray-800">
-                      Email
+                      Candidate Email
+                    </th>
+                    <th className="text-left py-4 px-6 font-semibold text-gray-800">
+                      Assessor Name
+                    </th>
+                    <th className="text-left py-4 px-6 font-semibold text-gray-800">
+                      Assessor Email
                     </th>
                     <th className="text-left py-4 px-6 font-semibold text-gray-800">
                       Score
@@ -323,7 +341,15 @@ function ResponsesTable({
                           {response.name}
                         </td>
                         <td className="py-4 px-6 text-gray-600">
-                          {response.email}
+                          {response.email && response.email !== "Not provided"
+                            ? response.email
+                            : "Not provided"}
+                        </td>
+                        <td className="py-4 px-6 text-gray-800">
+                          {response.accessorsName}
+                        </td>
+                        <td className="py-4 px-6 text-gray-600">
+                          {response.accessorsEmail}
                         </td>
                         <td className="py-4 px-6">
                           <span className="font-medium text-gray-900">

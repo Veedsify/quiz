@@ -120,6 +120,8 @@ CREATE TABLE quiz_responses (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
   email TEXT NOT NULL,
+  accessors_name TEXT NOT NULL,
+  accessors_email TEXT NOT NULL,
   responses TEXT NOT NULL,        -- JSON string of all responses
   total_score INTEGER NOT NULL,
   section_scores TEXT NOT NULL,   -- JSON string of section scores

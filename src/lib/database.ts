@@ -7,6 +7,8 @@ export interface QuizResponse {
   id?: string | number;
   name: string;
   email: string;
+  accessorsName: string;
+  accessorsEmail: string;
   responses: string; // JSON string of responses
   totalScore: number;
   sectionScores: string; // JSON string of section scores
@@ -52,12 +54,30 @@ export async function getDatabase() {
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL,
           email TEXT NOT NULL,
+          accessors_name TEXT,
+          accessors_email TEXT,
           responses TEXT NOT NULL,
           total_score INTEGER NOT NULL,
           section_scores TEXT NOT NULL,
           completed_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `);
+
+      // Add new columns if they don't exist (for migration)
+      try {
+        await db.execute(
+          `ALTER TABLE quiz_responses ADD COLUMN accessors_name TEXT`,
+        );
+      } catch (error) {
+        // Column already exists, ignore
+      }
+      try {
+        await db.execute(
+          `ALTER TABLE quiz_responses ADD COLUMN accessors_email TEXT`,
+        );
+      } catch (error) {
+        // Column already exists, ignore
+      }
 
       console.log("Connected to Turso database");
       return db;
@@ -84,12 +104,30 @@ export async function getDatabase() {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         email TEXT NOT NULL,
+        accessors_name TEXT,
+        accessors_email TEXT,
         responses TEXT NOT NULL,
         total_score INTEGER NOT NULL,
         section_scores TEXT NOT NULL,
         completed_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Add new columns if they don't exist (for migration)
+    try {
+      await db.exec(
+        `ALTER TABLE quiz_responses ADD COLUMN accessors_name TEXT`,
+      );
+    } catch (error) {
+      // Column already exists, ignore
+    }
+    try {
+      await db.exec(
+        `ALTER TABLE quiz_responses ADD COLUMN accessors_email TEXT`,
+      );
+    } catch (error) {
+      // Column already exists, ignore
+    }
 
     console.log("Connected to SQLite database");
     return db;
@@ -108,12 +146,14 @@ export async function saveQuizResponse(response: Omit<QuizResponse, "id">) {
       // Turso client
       const result = await db.execute({
         sql: `
-          INSERT INTO quiz_responses (name, email, responses, total_score, section_scores, completed_at)
-          VALUES (?, ?, ?, ?, ?, ?)
+          INSERT INTO quiz_responses (name, email, accessors_name, accessors_email, responses, total_score, section_scores, completed_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `,
         args: [
           response.name,
           response.email,
+          response.accessorsName,
+          response.accessorsEmail,
           response.responses,
           response.totalScore,
           response.sectionScores,
@@ -124,11 +164,13 @@ export async function saveQuizResponse(response: Omit<QuizResponse, "id">) {
     } else {
       // SQLite client
       const result = await (db as Database).run(
-        `INSERT INTO quiz_responses (name, email, responses, total_score, section_scores, completed_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO quiz_responses (name, email, accessors_name, accessors_email, responses, total_score, section_scores, completed_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           response.name,
           response.email,
+          response.accessorsName,
+          response.accessorsEmail,
           response.responses,
           response.totalScore,
           response.sectionScores,
@@ -155,6 +197,8 @@ export async function getAllQuizResponses(): Promise<QuizResponse[]> {
           id,
           name,
           email,
+          accessors_name as accessorsName,
+          accessors_email as accessorsEmail,
           responses,
           total_score as totalScore,
           section_scores as sectionScores,
@@ -167,6 +211,8 @@ export async function getAllQuizResponses(): Promise<QuizResponse[]> {
         id: row.id as number,
         name: row.name as string,
         email: row.email as string,
+        accessorsName: (row.accessorsName as string) || "Not provided",
+        accessorsEmail: (row.accessorsEmail as string) || "Not provided",
         responses: row.responses as string,
         totalScore: row.totalScore as number,
         sectionScores: row.sectionScores as string,
@@ -179,6 +225,8 @@ export async function getAllQuizResponses(): Promise<QuizResponse[]> {
           id,
           name,
           email,
+          accessors_name as accessorsName,
+          accessors_email as accessorsEmail,
           responses,
           total_score as totalScore,
           section_scores as sectionScores,
@@ -210,6 +258,8 @@ export async function getQuizResponseById(
             id,
             name,
             email,
+            accessors_name as accessorsName,
+            accessors_email as accessorsEmail,
             responses,
             total_score as totalScore,
             section_scores as sectionScores,
@@ -227,6 +277,8 @@ export async function getQuizResponseById(
         id: row.id as number,
         name: row.name as string,
         email: row.email as string,
+        accessorsName: (row.accessorsName as string) || "Not provided",
+        accessorsEmail: (row.accessorsEmail as string) || "Not provided",
         responses: row.responses as string,
         totalScore: row.totalScore as number,
         sectionScores: row.sectionScores as string,
@@ -240,6 +292,8 @@ export async function getQuizResponseById(
           id,
           name,
           email,
+          accessors_name as accessorsName,
+          accessors_email as accessorsEmail,
           responses,
           total_score as totalScore,
           section_scores as sectionScores,
@@ -551,9 +605,12 @@ export async function createDummyRecord() {
     };
 
     // Calculate section scores based on random responses
-    const calculateSectionScore = (sectionResponses: { [key: number]: { selectedOption: string; points: number } }) => {
+    const calculateSectionScore = (sectionResponses: {
+      [key: number]: { selectedOption: string; points: number };
+    }) => {
       return Object.values(sectionResponses).reduce(
-        (sum: number, response: { selectedOption: string; points: number }) => sum + response.points,
+        (sum: number, response: { selectedOption: string; points: number }) =>
+          sum + response.points,
         0,
       );
     };
@@ -620,9 +677,29 @@ export async function createDummyRecord() {
       "frank@temp.io",
     ];
 
+    const assessorNames = [
+      "Dr. Sarah Thompson",
+      "Prof. Michael Chen",
+      "Dr. Lisa Rodriguez",
+      "Dr. James Anderson",
+      "Prof. Emily Watson",
+      "Dr. Robert Kim",
+    ];
+
+    const assessorEmails = [
+      "s.thompson@medical.edu",
+      "m.chen@university.edu",
+      "l.rodriguez@clinic.org",
+      "j.anderson@hospital.com",
+      "e.watson@academy.edu",
+      "r.kim@institute.org",
+    ];
+
     const dummyRecord = {
       name: getRandomElement(randomNames),
       email: getRandomElement(randomEmails),
+      accessorsName: getRandomElement(assessorNames),
+      accessorsEmail: getRandomElement(assessorEmails),
       responses: JSON.stringify(dummyResponses),
       totalScore: totalScore,
       sectionScores: JSON.stringify(dummySectionScores),

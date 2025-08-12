@@ -5,9 +5,24 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const { name, email, responses, totalScore, sectionScores } = body;
+    const {
+      name,
+      email,
+      accessorsName,
+      accessorsEmail,
+      responses,
+      totalScore,
+      sectionScores,
+    } = body;
 
-    if (!name || !responses || totalScore === undefined || !sectionScores) {
+    if (
+      !name ||
+      !accessorsName ||
+      !accessorsEmail ||
+      !responses ||
+      totalScore === undefined ||
+      !sectionScores
+    ) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
@@ -15,9 +30,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate data types
-    if (typeof name !== "string" || (email && typeof email !== "string")) {
+    if (
+      typeof name !== "string" ||
+      (email && typeof email !== "string") ||
+      typeof accessorsName !== "string" ||
+      typeof accessorsEmail !== "string"
+    ) {
       return NextResponse.json(
         { error: "Invalid data types" },
+        { status: 400 },
+      );
+    }
+
+    // Validate email format for assessor
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(accessorsEmail)) {
+      return NextResponse.json(
+        { error: "Invalid assessor email format" },
         { status: 400 },
       );
     }
@@ -32,6 +61,8 @@ export async function POST(request: NextRequest) {
     const quizResponse = {
       name: name.trim(),
       email: email ? email.trim() : "Not provided",
+      accessorsName: accessorsName.trim(),
+      accessorsEmail: accessorsEmail.trim(),
       responses: JSON.stringify(responses),
       totalScore,
       sectionScores: JSON.stringify(sectionScores),
